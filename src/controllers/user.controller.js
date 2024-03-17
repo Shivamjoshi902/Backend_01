@@ -25,7 +25,7 @@ const registerUser= asyncHandler(
             throw new apiError(400,"all field are required")
         }
 
-        const isUserExist=User.findOne(
+        const isUserExist= await User.findOne(
             {
                 $or: [{userName},{email}]
             }
@@ -35,20 +35,24 @@ const registerUser= asyncHandler(
         }
 
         const avatarLocalPath=req.files?.avatar[0]?.path
-        const coverImageLocalPath=req.files?.coverImage[0]?.path
+
+        let coverImageLocalPath;
+        if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+            coverImageLocalPath = req.files.coverImage[0].path
+        }
 
         if(!avatarLocalPath){
-            throw apiError(400,"avtar is required")
+            throw new apiError(400,"avtar is required 1")
         }
 
         const avatar=await uploadOnCloudinary(avatarLocalPath)
         const coverImage=await uploadOnCloudinary(coverImageLocalPath)
 
         if(!avatar){
-            throw apiError(400,"avtar is required")
+            throw new apiError(400,"avtar is required 2")
         }
 
-        const user=User.create(
+        const user= await User.create(
             {
                 fullName,
                 email,
@@ -59,16 +63,17 @@ const registerUser= asyncHandler(
             }
         )
 
-        const createdUser=User.findById(user._id).select(
+        const createdUser= await User.findById(user._id).select(
             "-password -refreshToken"
         )
         
         if(!createdUser){
-            throw apiError(500,"error while saving user data")
+            throw new apiError(500,"error while saving user data")
         }
 
+        
         return res.status(201).json(
-            apiResponse(201,createdUser,"user is registered successfully")
+            new apiResponse(200, createdUser, "User registered Successfully")
         )
     }
 )
