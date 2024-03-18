@@ -4,6 +4,23 @@ import {User} from "../models/user.models.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {apiResponse} from "../utils/apiResponse.js"
 
+const generateRefreshAndAccessTokens =async (userId) =>{
+    try {
+
+        const user=User.findById(userId)
+        const refreshToken = user.generateRefreshTokens()
+        const accessToken = user.generateAccessTokens()
+    
+        user.refreshToken=refreshToken;
+        await  user.save({validateBeforeSave:false})
+    
+        return {refreshToken,accessToken}
+
+    } catch (error) {
+        throw new apiError(400,"unable to generate refreshToken and accessToken")
+    }
+
+}
 
 const registerUser= asyncHandler(
     async(req,res)=>{
@@ -74,6 +91,54 @@ const registerUser= asyncHandler(
         
         return res.status(201).json(
             new apiResponse(200, createdUser, "User registered Successfully")
+        )
+    }
+)
+
+const loginUser=asyncHandler(
+    //get userName or email from user 
+    //get password and check validation
+    //send cookies (access and refresh token)
+
+    async (req,res)=>{
+        const {userName,email,password} = req.body
+
+        if(!(userName || email)){
+            throw new apiError(400,"email or userName required")
+        }
+
+        const user = await User.findOne({
+            $or:[{userName},{email}]
+        })
+
+        if(!user){
+            throw new apiError(400,"user is not registered")
+        }
+
+        const isPasswordValid = await user.isPasswordCorrect(password)
+
+        if(!isPasswordValid){
+            throw new apiError(400,"Password is incorrect")
+        }
+
+        const {refreshToken,accessToken} = generateRefreshAndAccessTokens(user._id)
+
+        const loggedInUser=await User.findById(user._id).select("-password -refreshToken")
+
+        const options={
+            httpOnly:true,
+            secure:true
+        }
+
+        return res.status(200)
+        .cookie("accessToken",accessToken,options)
+        .cookie("refreshToken",refreshToken,options)
+        .json(
+            new apiResponse(200,
+            {
+                user:loggedInUser,accessToken,refreshToken
+            },
+            "user logged in seccessfully")
         )
     }
 )
