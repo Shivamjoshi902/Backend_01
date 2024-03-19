@@ -7,10 +7,11 @@ import {apiResponse} from "../utils/apiResponse.js"
 const generateRefreshAndAccessTokens =async (userId) =>{
     try {
 
-        const user=User.findById(userId)
+        const user=await User.findById(userId)
         const refreshToken = user.generateRefreshTokens()
         const accessToken = user.generateAccessTokens()
-    
+        
+        
         user.refreshToken=refreshToken;
         await  user.save({validateBeforeSave:false})
     
@@ -95,15 +96,15 @@ const registerUser= asyncHandler(
     }
 )
 
-const loginUser=asyncHandler(
+const loginUser= asyncHandler(
     //get userName or email from user 
     //get password and check validation
     //send cookies (access and refresh token)
 
     async (req,res)=>{
-        const {userName,email,password} = req.body
+        const {userName,email,password} = req.body;
 
-        if(!(userName || email)){
+        if(!userName || !email){
             throw new apiError(400,"email or userName required")
         }
 
@@ -121,7 +122,8 @@ const loginUser=asyncHandler(
             throw new apiError(400,"Password is incorrect")
         }
 
-        const {refreshToken,accessToken} = generateRefreshAndAccessTokens(user._id)
+        const {refreshToken,accessToken} =await generateRefreshAndAccessTokens(user._id)
+
 
         const loggedInUser=await User.findById(user._id).select("-password -refreshToken")
 
@@ -138,7 +140,7 @@ const loginUser=asyncHandler(
             {
                 user:loggedInUser,accessToken,refreshToken
             },
-            "user logged in seccessfully")
+            "user logged in successfully")
         )
     }
 )
@@ -172,3 +174,7 @@ const logoutUser=asyncHandler(
 )
 
 export {registerUser,loginUser,logoutUser}
+
+
+//Bhai Async Await Ne Bhot Parechan Kar Diya 
+//isse bachke rehna
