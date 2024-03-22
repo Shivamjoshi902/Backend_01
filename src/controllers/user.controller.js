@@ -173,7 +173,57 @@ const logoutUser=asyncHandler(
     }
 )
 
-export {registerUser,loginUser,logoutUser}
+const refreshAccessToken = asyncHandler(
+    async(req,res) => {
+        const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+        if(!incomingRefreshToken){
+            throw new apiError(400,"invaild refreshAccessToken request")
+        }
+
+        const decodedToken = jwt.verify(
+            incomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+
+        if(!decodedToken){
+        throw new apiError(400,"invaild jwt request")
+        }
+
+        const user = await User.findById(decodedToken?._id)
+
+        if(!user){
+            throw new apiError(400,"user not found by provided info")
+        }
+
+        if(incomingRefreshToken != user.refreshToken){
+            throw new apiError(400,"given token does not match token hold by user")
+        }
+
+        const {newAccessToken,newRefreshToken} = await generateRefreshAndAccessTokens(user._id)
+
+        const options = {
+            httpOnly : true,
+            secure : true
+        }
+
+        res.status(200)
+        .cookie("accessToken" = newAccessToken)
+        .cookie("refreshToken" = newRefreshToken)
+        .json(
+            new apiResponse(
+                200,
+                {
+                    accessToken:newAccessToken,
+                    refreshToken:newRefreshToken
+                },
+                "Token Updated successfully"
+                )
+        )
+
+    } 
+)
+
+export {registerUser,loginUser,logoutUser,refreshAccessToken}
 
 
 //Bhai Async Await Ne Bhot Parechan Kar Diya 
