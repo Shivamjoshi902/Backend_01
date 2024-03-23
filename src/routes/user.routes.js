@@ -1,14 +1,15 @@
 import { Router } from "express";
-import {registerUser,
-        loginUser,
-        logoutUser,
-        refreshAccessToken,
-        updatePassword,
-        changeAvatar,
-        changeCoverImage,
-        getCurrentUser,
-        changeUserDetails
-        }     
+import {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    updatePassword,
+    changeAvatar,
+    changeCoverImage,
+    getCurrentUser,
+    changeUserDetails
+}     
             from "../controllers/user.controller.js"
 
 import {upload} from "../middlewares/multer.middleware.js"

@@ -3,6 +3,7 @@ import {apiError} from "../utils/apiError.js"
 import {User} from "../models/user.models.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {apiResponse} from "../utils/apiResponse.js"
+import jwt from "jsonwebtoken"
 
 const generateRefreshAndAccessTokens =async (userId) =>{
     try {
@@ -14,7 +15,7 @@ const generateRefreshAndAccessTokens =async (userId) =>{
         
         user.refreshToken=refreshToken;
         await  user.save({validateBeforeSave:false})
-    
+
         return {refreshToken,accessToken}
 
     } catch (error) {
@@ -180,7 +181,7 @@ const refreshAccessToken = asyncHandler(
             throw new apiError(400,"invaild refreshAccessToken request")
         }
 
-        const decodedToken = await jwt.verify(
+        const decodedToken = jwt.verify(
             incomingRefreshToken,
             process.env.REFRESH_TOKEN_SECRET
         )
@@ -195,20 +196,21 @@ const refreshAccessToken = asyncHandler(
             throw new apiError(400,"user not found by provided info")
         }
 
-        if(incomingRefreshToken != user.refreshToken){
+        if(incomingRefreshToken !== user.refreshToken){
             throw new apiError(400,"given token does not match token hold by user")
         }
 
-        const {newAccessToken,newRefreshToken} = await generateRefreshAndAccessTokens(user._id)
 
+        const {refreshToken : newRefreshToken, accessToken : newAccessToken} = await generateRefreshAndAccessTokens(user._id)
+      
         const options = {
             httpOnly : true,
             secure : true
         }
 
         return res.status(200)
-        .cookie("accessToken" = newAccessToken)
-        .cookie("refreshToken" = newRefreshToken)
+        .cookie("accessToken",newAccessToken,options)
+        .cookie("refreshToken",newRefreshToken,options)
         .json(
             new apiResponse(
                 200,
