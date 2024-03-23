@@ -229,9 +229,18 @@ const updatePassword = asyncHandler(
     async(req,res) => {
         const {oldPassword,newPassword} = req.body
 
+        if(!oldPassword || !newPassword){
+            throw new apiError(400,"please provide required fields")
+        }
         const user = await User.findById(req.user?._id)
 
-        if(oldPassword !== user.password){
+        if(!user){
+            throw new apiError(400,"user not found")
+        }
+
+        const isPasswordRight = await user.isPasswordCorrect(oldPassword)
+
+        if(!isPasswordRight){
             throw new apiError(400,"your password is incorrect")
         }
 
@@ -287,9 +296,9 @@ const changeCoverImage = asyncHandler(
             throw new apiError(400,"CoverImage path not found while updating it")
         }
 
-        const CoverImage = await uploadOnCloudinary(localFilePath)
+        const coverImage = await uploadOnCloudinary(localFilePath)
 
-        if(!CoverImage.url){
+        if(!coverImage.url){
             throw new apiError(400,"error while uploading on cloudinary")
         }
 
@@ -317,7 +326,7 @@ const getCurrentUser = asyncHandler(
     async(req, res) => {
         return res
         .status(200)
-        .json(200, req.user, "current user fetched successfully")
+        .json(new apiResponse(200, req.user, "current user fetched successfully"))
     }
 )
 
@@ -329,7 +338,7 @@ const changeUserDetails = asyncHandler(
             throw new apiError(400,"all fields are required")
         }
 
-        const user = User.findByIdAndUpdate(
+        const user = await User.findByIdAndUpdate(
             req.user?._id,
             {
                 $set : {
@@ -343,7 +352,7 @@ const changeUserDetails = asyncHandler(
         return res
         .status(200)
         .json(
-            new apiResponse(200,user,"email ans userName updated successfully")
+            new apiResponse(200,user,"email and userName updated successfully")
         )
     }
 )
