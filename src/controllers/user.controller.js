@@ -357,7 +357,82 @@ const changeUserDetails = asyncHandler(
     }
 )
 
-export {    registerUser,
+const getUserChannelDetails = asyncHandler(
+    async(req,res) => {
+        const {userName} = req.param
+
+        if(!userName?.trim()){
+            throw new apiError(400,"userName is required")
+        }
+
+        const channel = await User.aggregate([
+            {
+                $match : {
+                userName : userName?.toLowerCase()
+                }
+            },
+            {
+                $lookup : {
+                    from : "subscriptions",
+                    localField : "_id",
+                    foreignField : "channel",
+                    as : "subscribers"
+                }
+            },
+            {
+                $lookup : {
+                    from : "subscriptions",
+                    localField : "_id",
+                    foreignField : "subscriber",
+                    as : "subscribedTo"
+                }
+            },
+            {
+                $addFields : {
+                    subscribersCount : {
+                        $size : "$subscribers"
+                    },
+                    channelSubscribedToCount : {
+                        $size : "$subscribedTo"
+                    },
+                    isSubscribed : {
+                        $cond : {
+                            if : {$in : [req.user?._id,"$subscribers.subscriber"]},
+                            then : true,
+                            else : false
+                        }
+                    }
+                }
+            },
+            {
+                $project : {
+                    fullName:1,
+                    userName:1,
+                    email:1,
+                    avatar:1,
+                    coverImage:1,
+                    isSubscribed:1,
+                    subscribersCount:1,
+                    channelSubscribedToCount:1
+                }
+            }
+        ])  
+
+        if(!channel.length){
+            throw new apiError(400,"channel does not exist")
+        }
+
+        return res
+        .status(200)
+        .json(
+            new apiResponse(200,channel[0],"user channel details fetched successfully")
+        )
+    }
+)
+
+
+export {
+            registerUser,
             loginUser,
             logoutUser,
             refreshAccessToken,
@@ -365,7 +440,8 @@ export {    registerUser,
             changeCoverImage,
             updatePassword,
             changeUserDetails,
-            getCurrentUser
+            getCurrentUser,
+            getUserChannelDetails
     }
 
 

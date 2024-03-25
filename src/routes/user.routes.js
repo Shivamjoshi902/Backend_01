@@ -8,7 +8,8 @@ import {
     changeAvatar,
     changeCoverImage,
     getCurrentUser,
-    changeUserDetails
+    changeUserDetails,
+    getUserChannelDetails
 }     
             from "../controllers/user.controller.js"
 
@@ -39,13 +40,13 @@ router.route("/refresh-Token").post(refreshAccessToken)
 
 router.route("/update-password").post(verifyJwt,updatePassword)
 
-router.route("/update-avatar").post(verifyJwt,upload.single("avatar"),changeAvatar)
+router.route("/update-avatar").patch(verifyJwt,upload.single("avatar"),changeAvatar)
 
-router.route("/update-cover-image").post(verifyJwt,upload.single("coverImage"),changeCoverImage)
+router.route("/update-cover-image").patch(verifyJwt,upload.single("coverImage"),changeCoverImage)
 
-router.route("/get-current-user").post(verifyJwt,getCurrentUser)
+router.route("/get-current-user").get(verifyJwt,getCurrentUser)
 
-router.route("/change-user-details").post(verifyJwt,changeUserDetails)
+router.route("/change-user-details").patch(verifyJwt,changeUserDetails)
 
 
 export default router
