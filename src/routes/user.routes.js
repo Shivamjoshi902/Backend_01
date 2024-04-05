@@ -9,7 +9,8 @@ import {
     changeCoverImage,
     getCurrentUser,
     changeUserDetails,
-    getUserChannelDetails
+    getUserChannelDetails,
+    getUserWatchHistory
 }     
             from "../controllers/user.controller.js"
 
@@ -47,6 +48,11 @@ router.route("/update-cover-image").patch(verifyJwt,upload.single("coverImage"),
 router.route("/get-current-user").get(verifyJwt,getCurrentUser)
 
 router.route("/change-user-details").patch(verifyJwt,changeUserDetails)
+
+router.route("/get-user-channel-details").get(verifyJwt,getUserChannelDetails)
+
+router.route("/get-user-watch-history").get(verifyJwt,getUserWatchHistory)
+
 
 
 export default router
